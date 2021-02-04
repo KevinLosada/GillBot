@@ -25,6 +25,6 @@ async def on_message(self, message):
 
 @bot.command()
 async def alive(ctx):
-    ctx.send("I'm alive!")
+    await ctx.send("I'm alive!")
 
 bot.run(TOKEN)
