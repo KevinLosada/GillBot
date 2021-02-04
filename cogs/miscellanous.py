@@ -1,6 +1,10 @@
 import discord
 from discord.ext import commands
 
+BOT_CHANNEL_ID = 805906867104514050
+SYDNEY_ID = 257372338868191233
+
+
 class Miscellaneous(commands.Cog):
 
     '''
@@ -13,10 +17,8 @@ class Miscellaneous(commands.Cog):
     #trolling sydney
     @commands.Cog.listener()
     async def on_message(self, message):
-        BOT_CHANNEL_ID = 805906867104514050
-        SYDNEY_ID = 257372338868191233
 
-        if message.channel.id == BOT_CHANNEL_ID and message.author.id == SYDNEY_ID and message.content.lower() == 'bitch':
+        if message.channel.id == BOT_CHANNEL_ID and message.author.id == SYDNEY_ID and 'bitch' in message.content.lower():
             await message.reply("No you're the bitch")
 
     @commands.command(aliases=['p'])
