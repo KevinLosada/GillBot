@@ -25,6 +25,8 @@ async def on_message(self, message):
     if message.user == Kevin and message.channel == test_channel:
         await bot.send_message(bot_channel, "Fuck you too bitch " + Kevin.mention)
 
-
+@bot.command()
+async def alive(ctx):
+    ctx.send("I'm alive!")
 
 bot.run(TOKEN)
