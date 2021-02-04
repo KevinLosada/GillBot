@@ -5,15 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-Sydney = discord.utils.get()
-
 # important declarations
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot(command_prefix='!')
 
 @bot.event
 async def on_message(self, message):
-    Sydney =  discord.utils.get(message.guild.members, id = 257372338868191233)
+    Test =  discord.utils.get(message.guild.members, id = 257372338868191233)
     Kevin = discord.utils.get(message.guild.members, id = 182650505699393536)
 
     bot_channel = discord.utils.get(message.guild.channels, id=805906867104514050)
