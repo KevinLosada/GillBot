@@ -1,1 +1,1 @@
-# GillBot
+# GillBot is a simple Discord bot I created as a hobby for a personal server. It does not server any specific purpose and has become a personal fun project for the most part.

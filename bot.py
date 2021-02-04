@@ -3,28 +3,77 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+'''
+Main bot file, loads all cogs and sets status, all other functionality is inside the cogs
+'''
+
 load_dotenv()
 
 # important declarations
 TOKEN = os.getenv('DISCORD_TOKEN')
-bot = commands.Bot(command_prefix='!')
+command_prefix = '!'
+bot = commands.Bot(command_prefix)
 
-# @bot.event
-# async def on_message(self):
-#     Test =  discord.utils.get(message.guild.members, id = 257372338868191233)
-#     Kevin = discord.utils.get(message.guild.members, id = 182650505699393536)
+MODERATOR_ROLE_ID = 750821675670568970
 
-#     bot_channel = discord.utils.get(message.guild.channels, id=805906867104514050)
-#     test_channel = discord.utils.get(message.guild.channels, id=806670890170974208)
+# Bot code begins
+@bot.event
+async def on_ready():
+    print(f'Bot is online~\n{bot.user.name}, (ID: {bot.user.id})\n')
 
-#     if message.author == self.user:
-#         return
-    
-#     if message.user == Kevin and message.channel == test_channel:
-#         await bot.send_message(bot_channel, "Fuck you too bitch " + Kevin.mention)
+    #Load cogs
+    print('Cogs loading:')
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            bot.load_extension(f'cogs.{filename[:-3]}')
+            print(f'- {(filename[:-3]).title()} commands loaded')
+
+    #Set status
+    await bot.change_presence(status = discord.Status.online, activity=discord.Game("I'm not gonna fuck you Sydney"))
 
 @bot.command()
-async def alive(ctx):
-    await ctx.send("I'm alive!")
+async def load(ctx, extension):
+    roles = ctx.author.roles
+    mod_role = ctx.guild.get_role(MODERATOR_ROLE_ID)
+
+    if mod_role not in roles:
+        await ctx.send(
+            f'{ctx.author.mention} this command is only meant to be used by Moderators.')
+    else:
+        bot.load_extension(f'cogs.{extension}')
+        await ctx.send(f'{extension.title()} cog has been loaded')
+
+@bot.command()
+async def unload(ctx, extension):
+    roles = ctx.author.roles
+    mod_role = ctx.guild.get_role(MODERATOR_ROLE_ID)
+
+    if mod_role not in roles:
+        await ctx.send(
+            f'{ctx.author.mention} this command is only meant to be used by Moderators.')
+    else:
+        bot.unload_extension(f'cogs.{extension}')
+        await ctx.send(f'{extension.title()} cog was unloaded')
+
+@bot.command(aliases=['r'])
+async def reload(ctx):
+    roles = ctx.author.roles
+    mod_role = ctx.guild.get_role(MODERATOR_ROLE_ID)
+
+    if mod_role not in roles:
+        await ctx.send(
+            f'{ctx.author.mention} this command is only meant to be used by Moderators.')
+    else:
+        try:
+            for filename in os.listdir('./cogs'):
+                if filename.endswith('.py'):
+                    bot.unload_extension(f'cogs.{filename[:-3]}')
+                    bot.load_extension(f'cogs.{filename[:-3]}')
+                    print(f'- {(filename[:-3]).title()} commands reloaded')
+            await ctx.send(f'Cogs reloaded succesfully')
+            print(f'Cogs reloaded succesfully\n')
+        except Exception:
+            await ctx.send(f"Something's not right...")
+            print(Exception)
 
 bot.run(TOKEN)
