@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 BOT_CHANNEL_ID = 805906867104514050
