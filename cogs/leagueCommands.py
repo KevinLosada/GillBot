@@ -1,18 +1,19 @@
 import os
+import sys
+from cassiopeia.core import summoner
 import discord
 from discord.ext import commands
-from dotenv import load_dotenv
-from cassiopeia import Summoner, NotFoundError
+from cassiopeia import Summoner
+from datapipelines import NotFoundError
 from pymongo import MongoClient
 
-load_dotenv()
-KEY = os.getenv('RIOT_KEY')
 MONGO_CONNECT_STRING = os.getenv('MONGODB_STRING')
 region = 'NA'
+checkmark = '✅'
 
-client = MongoClient(MONGO_CONNECT_STRING)
-db = client.main
-summoner_names = db.summoner_names
+client = MongoClient(MONGO_CONNECT_STRING) #client
+db = client.main #database
+summoner_names = db.summoner_names #collection
 
 
 class LeagueCommands(commands.Cog):
@@ -21,7 +22,6 @@ class LeagueCommands(commands.Cog):
     '''
     @commands.command(aliases=['ru'])
     async def register_username(self, ctx, user):
-        emoji = '✅'
         username = user
         user = {'discord_name': ctx.author.name,
                 'summoner_name': username}
@@ -40,21 +40,38 @@ class LeagueCommands(commands.Cog):
         else: 
             added = summoner_names.insert_one(user)
             if added is not None:
-                await ctx.message.add_reaction(emoji)
+                await ctx.message.add_reaction(checkmark)
+    
+    @commands.command(aliases=['uu'])
+    async def update_username(self, ctx, user):
+        try:
+            summoner_names.update_one({'discord_name': ctx.author.name}, {"$set": {'summoner_name': user}})
+            await ctx.message.add_reaction(checkmark)
+        except:
+            await ctx.send("Something went wrong, tag Kevin")
+            await ctx.send(sys.exc_info()[0])
 
     @commands.command(aliases=['si'])
-    async def summoner_info(self, ctx):
-        summ_name_dict = summoner_names.find_one({'discord_name': ctx.author.name})
-        summ_name = summ_name_dict['summoner_name']
-        summoner = Summoner(name=summ_name, region=region)
+    async def summoner_info(self, ctx, passed_name: str=None):
+        if passed_name is None:
+            summoner_name_dict = summoner_names.find_one({'discord_name': ctx.author.name})
+            summoner = Summoner(name=summoner_name_dict['summoner_name'], region=region)
+        else:
+            # currently, except not being reached
+            try:
+                summoner = Summoner(name=passed_name, region=region)
+            except NotFoundError:
+                await ctx.send("Summoner could not be found")
+                return
+
+        formatted_summoner_name = summoner.name.replace(' ', '%20')
 
         #create embed object
         embed = discord.Embed(
-            title=f'{summ_name}\'s Summoner Stats',
-            url=f'https://u.gg/lol/profile/na1/{summ_name}/overview',
-            description=f'Collection of summoner info, click link to access u.gg summoner page')
+            title=f'{summoner.name}\'s Summoner Stats',
+            url=f'https://na.op.gg/summoner/userName={formatted_summoner_name}',
+            description=f'Display of summoner information, click on link for op.gg page.')
         
-        await ctx.send(embed=embed)
         #Add summoner icon thumbnail to embed
         embed.set_thumbnail(url=summoner.profile_icon.url)
 
@@ -62,6 +79,17 @@ class LeagueCommands(commands.Cog):
         embed.add_field(
             name="Level",
             value=summoner.level)
+        
+        # champ_masteries = summoner.champion_masteries.filter(lambda cm: cm.level >= 5)
+
+        # #need to find way to format these and print them
+        # formatted_champ_masteries = ''
+
+        # embed.add_field(
+        #     name="Champion Masteries",
+        #     value=formatted_champ_masteries
+        # )
+        await ctx.send(embed=embed)
 
     # @commands.command(aliases=['si'])
     # async def summoner_info(self, ctx, name):
