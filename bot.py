@@ -29,7 +29,7 @@ async def on_ready():
             print(f'- {(filename[:-3]).title()} commands loaded')
 
     #Set status
-    await bot.change_presence(status = discord.Status.online, activity=discord.Game("I'm not gonna fuck you Sydney"))
+    await bot.change_presence(status = discord.Status.online, activity=discord.Game("Ready to"))
 
 @bot.command()
 async def load(ctx, extension):
