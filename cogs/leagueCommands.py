@@ -1,9 +1,9 @@
 import os
 import sys
-from cassiopeia.core import summoner
+import cassiopeia as cass
 import discord
 from discord.ext import commands
-from cassiopeia import Summoner
+from cassiopeia import Summoner, Champion, Champions, Queue
 from datapipelines import NotFoundError
 from pymongo import MongoClient
 
@@ -22,6 +22,7 @@ class LeagueCommands(commands.Cog):
     '''
     @commands.command(aliases=['ru'])
     async def register_username(self, ctx, user):
+        '''Usage: type the command followed by your riot summoner name to register yourself to the bot'''
         username = user
         user = {'discord_name': ctx.author.name,
                 'summoner_name': username}
@@ -44,6 +45,7 @@ class LeagueCommands(commands.Cog):
     
     @commands.command(aliases=['uu'])
     async def update_username(self, ctx, user):
+        '''Update your information to the bot'''
         try:
             summoner_names.update_one({'discord_name': ctx.author.name}, {"$set": {'summoner_name': user}})
             await ctx.message.add_reaction(checkmark)
@@ -53,6 +55,7 @@ class LeagueCommands(commands.Cog):
 
     @commands.command(aliases=['si'])
     async def summoner_info(self, ctx, passed_name: str=None):
+        '''Call the command alone for your personal summoner info, or provide a summoner name after the command for that summoner's information. Multi-word names must be put in between quotation marks -> \"\"'''
         if passed_name is None:
             summoner_name_dict = summoner_names.find_one({'discord_name': ctx.author.name})
             summoner = Summoner(name=summoner_name_dict['summoner_name'], region=region)
@@ -60,6 +63,7 @@ class LeagueCommands(commands.Cog):
             # currently, except not being reached
             try:
                 summoner = Summoner(name=passed_name, region=region)
+                summoner.level #simple call to api to trigger exception if not found
             except NotFoundError:
                 await ctx.send("Summoner could not be found")
                 return
@@ -80,35 +84,38 @@ class LeagueCommands(commands.Cog):
             name="Level",
             value=summoner.level)
         
-        # champ_masteries = summoner.champion_masteries.filter(lambda cm: cm.level >= 5)
+        #TO DO: Add prettified champ masteries to the embed
 
-        # #need to find way to format these and print them
-        # formatted_champ_masteries = ''
-
-        # embed.add_field(
-        #     name="Champion Masteries",
-        #     value=formatted_champ_masteries
-        # )
         await ctx.send(embed=embed)
 
-    # @commands.command(aliases=['si'])
-    # async def summoner_info(self, ctx, name):
-    #     summoner = Summoner(name=name, region=region)
-
-    #     #create embed object
-    #     embed = discord.Embed(
-    #         title=f'{name}\'s Summoner Stats',
-    #         url=f'https://u.gg/lol/profile/na1/{name}/overview',
-    #         description=f'Collection of summoner info, click link to access u.gg summoner page')
+    @commands.command(aliases=['ci'])
+    async def champion_information(self, ctx, champ):
+        '''Provide the champion name you want after command and it will provide a link for the wikipedia page on said champ. This command is still in progress, so please put multi-word names in quotes.'''
         
-    #     await ctx.send(embed=embed)
-    #     # #Add summoner icon thumbnail to embed
-    #     # embed.set_thumbnail(url=summoner.profile_icon.url)
+        try:
+            champion = Champion(name=champ.title(), region=region)
+            champion.blurb #call to trigger exception if not found
+        except NotFoundError:
+            await ctx.send("Sorry, that champion could not be found. Please make sure you spelled the name correctly.")
+        
+        wiki_champ_name = champion.name.replace(' ', '_').replace('\'', '%27')
 
-    #     # #level field
-    #     # embed.add_field(
-    #     #     name="Level",
-    #     #     value=summoner.level)
+        #create embed
+        embed = discord.Embed(
+            title=f'{champion.name}, {champion.title}',
+            url=f'https://leagueoflegends.fandom.com/wiki/{wiki_champ_name}/LoL',
+            description=f'{champion.blurb}'
+        )
+        embed.set_thumbnail(url=f'http://ddragon.leagueoflegends.com/cdn/11.4.1/img/champion/{champion.name}.png')
+        embed.add_field(name='Passive', value=champion.passive.description)
+
+        await ctx.send(embed=embed)
+
+
+
+# def get_win_rate(player: cass.Summoner):
+#     match_history=player.match_history(queues={Queue.normal_draft_fives})
+#     return sum([1 for match in match_history if match.participants[player].stats.win])/len(match_history)
 
 def setup(bot):
     bot.add_cog(LeagueCommands(bot))
