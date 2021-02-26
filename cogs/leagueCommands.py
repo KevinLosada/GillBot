@@ -30,7 +30,8 @@ class LeagueCommands(commands.Cog):
 
         # check if user exists
         try:
-            sum = Summoner(name=username, region='NA')
+            summoner = Summoner(name=username, region='NA')
+            summoner.profile_icon
         except NotFoundError:
             ctx.send("Summoner could not be found")
             return
@@ -109,10 +110,10 @@ class LeagueCommands(commands.Cog):
         )
         embed.set_thumbnail(url=f'http://ddragon.leagueoflegends.com/cdn/11.4.1/img/champion/{champion.name}.png')
         embed.add_field(name='Passive', value=champion.passive.description)
-        embed.add_field(name='Q', value=champion.spells['Q'].description, inline=False)
-        embed.add_field(name='E', value=champion.spells['E'].description, inline=False)
-        embed.add_field(name='W', value=champion.spells['W'].description, inline=False)
-        embed.add_field(name='R', value=champion.spells['R'].description, inline=False)
+        embed.add_field(name='Q', value=champion.spells[0].description, inline=False)
+        embed.add_field(name='W', value=champion.spells[1].description, inline=False)
+        embed.add_field(name='E', value=champion.spells[2].description, inline=False)
+        embed.add_field(name='R', value=champion.spells[3].description, inline=False)
         await ctx.send(embed=embed)
 
 
