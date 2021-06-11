@@ -13,7 +13,7 @@ checkmark = '✅'
 
 client = MongoClient(MONGO_CONNECT_STRING)  # client
 db = client.main  # database
-summoner_names = db.summoner_names  # collection
+summoner_info = db['summoner_info']
 
 
 class LeagueCommands(commands.Cog):
@@ -37,19 +37,29 @@ class LeagueCommands(commands.Cog):
             return
 
         # check if summoner is registered, if not then register
-        if summoner_names.count_documents(user, limit=1) != 0:
+        if summoner_info.count_documents(user, limit=1) != 0:
             await ctx.send(f'{ctx.author.name} you are already registered with {username}.')
             return
         else:
-            added = summoner_names.insert_one(user)
+            added = summoner_info.insert_one(user)
             if added is not None:
                 await ctx.message.add_reaction(checkmark)
+
+    @commands.command(aliases=['uuu'])
+    async def update_username_two(self, ctx, user):
+        """Update your information to the bot"""
+        try:
+            summoner_info.update_one({'discord_name': ctx.author.name}, {"$set": {'summoner_name': user}})
+            await ctx.message.add_reaction(checkmark)
+        except:
+            await ctx.send("Something went wrong, tag Kevin")
+            await ctx.send(sys.exc_info()[0])
 
     @commands.command(aliases=['uu'])
     async def update_username(self, ctx, user):
         """Update your information to the bot"""
         try:
-            summoner_names.update_one({'discord_name': ctx.author.name}, {"$set": {'summoner_name': user}})
+            summoner_info.update_one({'discord_name': ctx.author.name}, {"$set": {'summoner_name': user}})
             await ctx.message.add_reaction(checkmark)
         except:
             await ctx.send("Something went wrong, tag Kevin")
@@ -59,7 +69,7 @@ class LeagueCommands(commands.Cog):
     async def summoner_info(self, ctx, passed_name: str = None):
         """Pass a name for that summoner's info, no name for your own if registered. """
         if passed_name is None:
-            summoner_name_dict = summoner_names.find_one({'discord_name': ctx.author.name})
+            summoner_name_dict = summoner_info.find_one({'discord_name': ctx.author.name})
             summoner = Summoner(name=summoner_name_dict['summoner_name'], region=region)
         else:
             # currently, except not being reached
@@ -99,6 +109,7 @@ class LeagueCommands(commands.Cog):
             champion.blurb  # call to trigger exception if not found
         except NotFoundError:
             await ctx.send("Sorry, that champion could not be found. Please make sure you spelled the name correctly.")
+            return
 
         wiki_champ_name = champion.name.replace(' ', '_').replace('\'', '%27')
 
@@ -110,16 +121,21 @@ class LeagueCommands(commands.Cog):
         )
         embed.set_thumbnail(url=f'http://ddragon.leagueoflegends.com/cdn/11.4.1/img/champion/{champion.name}.png')
         embed.add_field(name='Passive', value=champion.passive.description)
-        embed.add_field(name='Q', value=champion.spells[0].description, inline=False)
-        embed.add_field(name='W', value=champion.spells[1].description, inline=False)
-        embed.add_field(name='E', value=champion.spells[2].description, inline=False)
-        embed.add_field(name='R', value=champion.spells[3].description, inline=False)
+        embed.add_field(name='Q', value=champion.spells[0].sanitized_description, inline=False)
+        embed.add_field(name='W', value=champion.spells[1].sanitized_description, inline=False)
+        embed.add_field(name='E', value=champion.spells[2].sanitized_description, inline=False)
+        embed.add_field(name='R', value=champion.spells[3].sanitized_description, inline=False)
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=['uwr'])
+    async def update_win_rate(self, ctx):
+        ctx.send("Updating winrate, this process can take a while and other LOL related commands will not work. I will send another message once it's completed.")
+        summoner_entry = {}
+        return
 
-# def get_win_rate(player: cass.Summoner):
-#     match_history=player.match_history(queues={Queue.normal_draft_fives})
-#     return sum([1 for match in match_history if match.participants[player].stats.win])/len(match_history)
+def get_win_rate(player: cass.Summoner):
+    match_history=player.match_history(queues={Queue.normal_draft_fives})
+    return sum([1 for match in match_history if match.participants[player].stats.win])/len(match_history)
 
 def setup(bot):
     bot.add_cog(LeagueCommands(bot))
